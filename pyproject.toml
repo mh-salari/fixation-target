@@ -43,9 +43,9 @@ dev = [
 fixation-target = "fixation_target.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/fixation-target"
-Repository = "https://github.com/yourusername/fixation-target"
-Issues = "https://github.com/yourusername/fixation-target/issues"
+Homepage = "https://github.com/mh-salari/fixation-target"
+Repository = "https://github.com/mh-salari/fixation-target"
+Issues = "https://github.com/mh-salari/fixation-target/issues"
 
 [tool.ruff]
 line-length = 119

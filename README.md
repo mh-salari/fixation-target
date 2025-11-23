@@ -23,10 +23,10 @@ All dimensions are specified in visual angles (degrees) and automatically conver
 <td align="center"><b>AB</b><br/>(Center + Outer)</td>
 </tr>
 <tr>
-<td align="center"><img src="examples/fixation_a.png" width="100"/></td>
-<td align="center"><img src="examples/fixation_b.png" width="100"/></td>
-<td align="center"><img src="examples/fixation_c.png" width="100"/></td>
-<td align="center"><img src="examples/fixation_ab.png" width="100"/></td>
+<td align="center"><img src="https://raw.githubusercontent.com/mh-salari/fixation-target/main/examples/fixation_a.png" width="100"/></td>
+<td align="center"><img src="https://raw.githubusercontent.com/mh-salari/fixation-target/main/examples/fixation_b.png" width="100"/></td>
+<td align="center"><img src="https://raw.githubusercontent.com/mh-salari/fixation-target/main/examples/fixation_c.png" width="100"/></td>
+<td align="center"><img src="https://raw.githubusercontent.com/mh-salari/fixation-target/main/examples/fixation_ab.png" width="100"/></td>
 </tr>
 <tr>
 <td align="center"><b>AC</b><br/>(Center + Cross)</td>
@@ -35,9 +35,9 @@ All dimensions are specified in visual angles (degrees) and automatically conver
 <td></td>
 </tr>
 <tr>
-<td align="center"><img src="examples/fixation_ac.png" width="100"/></td>
-<td align="center"><img src="examples/fixation_bc.png" width="100"/></td>
-<td align="center"><img src="examples/fixation_abc.png" width="100"/></td>
+<td align="center"><img src="https://raw.githubusercontent.com/mh-salari/fixation-target/main/examples/fixation_ac.png" width="100"/></td>
+<td align="center"><img src="https://raw.githubusercontent.com/mh-salari/fixation-target/main/examples/fixation_bc.png" width="100"/></td>
+<td align="center"><img src="https://raw.githubusercontent.com/mh-salari/fixation-target/main/examples/fixation_abc.png" width="100"/></td>
 <td></td>
 </tr>
 </table>
@@ -51,7 +51,7 @@ pip install fixation-target
 
 ### From source
 ```bash
-git clone https://github.com/yourusername/fixation-target.git
+git clone https://github.com/mh-salari/fixation-target.git
 cd fixation-target
 pip install -e .
 ```
