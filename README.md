@@ -1,6 +1,6 @@
 # Visual Fixation Target
 
-A Python package to generate customizable fixation targets for vision science experiments.
+A Python package to generate customizable fixation targets for eye trcking experiments.
 
 ## Description
 
