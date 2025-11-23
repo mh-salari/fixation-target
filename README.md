@@ -168,6 +168,18 @@ What is the best fixation target? The effect of target shape on stability of fix
 *Vision Research*, 76, 31-42.
 https://doi.org/10.1016/j.visres.2012.10.012
 
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+This project has received funding from the European Union's Horizon Europe research and innovation funding program under grant agreement No 101072410, Eyes4ICU project.
+
+<p align="center">
+<img src="https://github.com/mh-salari/fixation-target/raw/main/resources/Funded_by_EU_Eyes4ICU.png" alt="Funded by EU Eyes4ICU" width="500">
+</p>
+
 ## Author
 
 Mohammadhossein Salari
