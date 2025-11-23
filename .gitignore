@@ -15,3 +15,5 @@ output/
 
 # Keep examples directory (for README)
 !examples/
+
+.vscode/
