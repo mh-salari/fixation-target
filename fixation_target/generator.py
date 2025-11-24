@@ -115,7 +115,12 @@ def _render_png(
         center_radius = (center_diameter_px * scale) // 2
         draw = ImageDraw.Draw(img)
         draw.ellipse(
-            [scaled_cx - center_radius, scaled_cy - center_radius, scaled_cx + center_radius, scaled_cy + center_radius],
+            [
+                scaled_cx - center_radius,
+                scaled_cy - center_radius,
+                scaled_cx + center_radius,
+                scaled_cy + center_radius,
+            ],
             fill=center_color,
         )
 
@@ -208,6 +213,7 @@ def fixation_target(
     cross_color: tuple[int, int, int, int] = (255, 255, 255, 255),
     background_diameter_in_degrees: float | None = None,
     background_color: tuple[int, int, int, int] | None = None,
+    filename: str = "fixation",
     antialias: bool = True,
     show: bool = True,
 ) -> None:
@@ -231,6 +237,7 @@ def fixation_target(
         cross_color: Color of the cross in (R, G, B, A) format. Default: white.
         background_diameter_in_degrees: Diameter of background circle in degrees (optional).
         background_color: Color of background circle in (R, G, B, A) format (optional).
+        filename: Base filename (without extension). Target type will be appended. Default: "fixation".
         antialias: Apply 2x supersampling for smoother edges in PNG. Default: True.
         show: Whether to display the image after generation. Default: True.
 
@@ -333,8 +340,8 @@ def fixation_target(
     # Save paths
     save_path = Path(save_path)
     save_path.mkdir(exist_ok=True)
-    png_path = save_path / f"fixation_{target_type.lower()}.png"
-    svg_path = save_path / f"fixation_{target_type.lower()}.svg"
+    png_path = save_path / f"{filename}_{target_type.lower()}.png"
+    svg_path = save_path / f"{filename}_{target_type.lower()}.svg"
 
     # Render PNG
     img = _render_png(

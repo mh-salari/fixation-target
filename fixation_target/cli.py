@@ -20,6 +20,9 @@ Examples:
   fixation-target --output output/ --target-type AB --screen-width-mm 476.64 \\
     --screen-height-mm 268.11 --screen-width-px 1920 --screen-height-px 1080 \\
     --viewing-distance-mm 930
+
+  # Generate with custom filename and no anti-aliasing
+  fixation-target --json config.json --output output/ --filename my_target --no-antialias
         """,
     )
 
@@ -43,6 +46,19 @@ Examples:
         "--no-show",
         action="store_true",
         help="Don't display the generated image",
+    )
+
+    # Output options
+    parser.add_argument(
+        "--filename",
+        type=str,
+        default="fixation",
+        help="Base filename without extension (default: fixation). Target type suffix will be appended automatically",
+    )
+    parser.add_argument(
+        "--no-antialias",
+        action="store_true",
+        help="Disable 2x supersampling anti-aliasing for PNG (enabled by default)",
     )
 
     # Screen parameters
@@ -117,6 +133,10 @@ Examples:
     # Set output path and show option
     config["save_path"] = Path(args.output)
     config["show"] = not args.no_show
+
+    # Set filename and antialias options
+    config["filename"] = args.filename
+    config["antialias"] = not args.no_antialias
 
     # Generate the target
     fixation_target(**config)

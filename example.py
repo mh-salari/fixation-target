@@ -50,4 +50,6 @@ if __name__ == "__main__":
         cross_color=cross_color,
         background_diameter_in_degrees=background_diameter_in_degrees,
         background_color=background_color,
+        filename="fixation",
+        antialias=True,
     )

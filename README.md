@@ -101,6 +101,7 @@ fixation-target \
   --center-diameter 0.1 \
   --outer-diameter 0.6 \
   --cross-width 0.15 \
+  --filename my_target \
 ```
 
 ### Python API
@@ -159,7 +160,18 @@ fixation_target(
 - `cross_color`: RGBA color tuple for cross (default: white)
 - `background_diameter_in_degrees`: Optional background circle diameter
 - `background_color`: Optional background circle color (RGBA tuple)
+- `filename`: Base filename without extension (default: "fixation"). Target type suffix will be appended automatically
+- `antialias`: Apply 2x supersampling for smoother PNG edges (default: True)
 - `show`: Whether to display the generated image (default: True)
+
+### Output Files
+The package generates **both PNG and SVG** formats:
+- **PNG**: Raster image with optional anti-aliasing (2x supersampling)
+- **SVG**: Vector graphics for infinite scalability
+
+Files are named as `{filename}_{target_type}.{png|svg}`. For example, with `filename="my_target"` and `target_type="ABC"`:
+- `my_target_abc.png`
+- `my_target_abc.svg`
 
 ## Reference
 
