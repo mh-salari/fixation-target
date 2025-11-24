@@ -44,61 +44,84 @@ def _render_png(
     cross_color: tuple[int, int, int, int],
     background_diameter_px: int | None,
     background_color: tuple[int, int, int, int] | None,
+    antialias: bool,
 ) -> Image.Image:
-    """Render fixation target as PNG using PIL."""
-    img = Image.new("RGBA", img_size, (0, 0, 0, 0))
+    """Render fixation target as PNG using PIL with optional supersampling."""
+    # Apply 2x supersampling if antialiasing is enabled
+    scale = 2 if antialias else 1
+    scaled_size = (img_size[0] * scale, img_size[1] * scale)
+    scaled_cx, scaled_cy = cx * scale, cy * scale
+
+    img = Image.new("RGBA", scaled_size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
     # Background circle
     if background_diameter_px is not None and background_color is not None:
-        background_radius = background_diameter_px // 2
+        background_radius = (background_diameter_px * scale) // 2
         draw.ellipse(
-            [cx - background_radius, cy - background_radius, cx + background_radius, cy + background_radius],
+            [
+                scaled_cx - background_radius,
+                scaled_cy - background_radius,
+                scaled_cx + background_radius,
+                scaled_cy + background_radius,
+            ],
             fill=background_color,
         )
 
     # Outer circle (B component)
     if draw_outer:
-        outer_radius = outer_diameter_px // 2
+        outer_radius = (outer_diameter_px * scale) // 2
         draw.ellipse(
-            [cx - outer_radius, cy - outer_radius, cx + outer_radius, cy + outer_radius],
+            [scaled_cx - outer_radius, scaled_cy - outer_radius, scaled_cx + outer_radius, scaled_cy + outer_radius],
             fill=outer_color,
         )
 
     # Cross (C component)
     if draw_cross:
-        outer_radius = outer_diameter_px // 2
+        outer_radius = (outer_diameter_px * scale) // 2
 
         # Create circular mask for outer circle boundary
-        circle_mask = Image.new("L", img_size, 0)
+        circle_mask = Image.new("L", scaled_size, 0)
         circle_draw = ImageDraw.Draw(circle_mask)
         circle_draw.ellipse(
-            [cx - outer_radius, cy - outer_radius, cx + outer_radius, cy + outer_radius],
+            [scaled_cx - outer_radius, scaled_cy - outer_radius, scaled_cx + outer_radius, scaled_cy + outer_radius],
             fill=255,
         )
 
         # Create cross mask
-        cross_mask = Image.new("L", img_size, 0)
+        cross_mask = Image.new("L", scaled_size, 0)
         cross_draw = ImageDraw.Draw(cross_mask)
         cross_length = outer_radius
-        cross_draw.line([cx - cross_length, cy, cx + cross_length, cy], fill=255, width=cross_width_px)
-        cross_draw.line([cx, cy - cross_length, cx, cy + cross_length], fill=255, width=cross_width_px)
+        cross_draw.line(
+            [scaled_cx - cross_length, scaled_cy, scaled_cx + cross_length, scaled_cy],
+            fill=255,
+            width=cross_width_px * scale,
+        )
+        cross_draw.line(
+            [scaled_cx, scaled_cy - cross_length, scaled_cx, scaled_cy + cross_length],
+            fill=255,
+            width=cross_width_px * scale,
+        )
 
         # Clip cross to circle boundary
         cross_mask = ImageChops.multiply(cross_mask, circle_mask)
 
         # Composite cross onto image
-        cross_layer = Image.new("RGBA", img_size, cross_color)
+        cross_layer = Image.new("RGBA", scaled_size, cross_color)
         img = Image.composite(cross_layer, img, cross_mask)
 
     # Center dot (A component)
     if draw_center:
-        center_radius = center_diameter_px // 2
+        center_radius = (center_diameter_px * scale) // 2
         draw = ImageDraw.Draw(img)
         draw.ellipse(
-            [cx - center_radius, cy - center_radius, cx + center_radius, cy + center_radius],
+            [scaled_cx - center_radius, scaled_cy - center_radius, scaled_cx + center_radius, scaled_cy + center_radius],
             fill=center_color,
         )
+
+    # Downsample to final size if antialiasing was applied
+    if antialias:
+        img = img.resize(img_size, Image.Resampling.LANCZOS)
 
     img.save(png_path)
     return img
@@ -185,6 +208,7 @@ def fixation_target(
     cross_color: tuple[int, int, int, int] = (255, 255, 255, 255),
     background_diameter_in_degrees: float | None = None,
     background_color: tuple[int, int, int, int] | None = None,
+    antialias: bool = True,
     show: bool = True,
 ) -> None:
     """Generate a fixation target for vision science experiments.
@@ -207,6 +231,7 @@ def fixation_target(
         cross_color: Color of the cross in (R, G, B, A) format. Default: white.
         background_diameter_in_degrees: Diameter of background circle in degrees (optional).
         background_color: Color of background circle in (R, G, B, A) format (optional).
+        antialias: Apply 2x supersampling for smoother edges in PNG. Default: True.
         show: Whether to display the image after generation. Default: True.
 
     """
@@ -328,6 +353,7 @@ def fixation_target(
         cross_color,
         background_diameter_px,
         background_color,
+        antialias,
     )
     print(f"Saved PNG: {png_path}")
 
