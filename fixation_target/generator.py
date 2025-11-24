@@ -16,9 +16,157 @@ Email:        mohammadhossein.salari@gmail.com
 
 from pathlib import Path
 
+import svgwrite
 from PIL import Image, ImageChops, ImageDraw
 
 from fixation_target.converter import VisualAngleConverter
+
+
+def _rgba_to_svg_attrs(color: tuple[int, int, int, int]) -> dict:
+    """Convert RGBA color tuple to SVG attributes."""
+    r, g, b, a = color
+    return {"fill": f"rgb({r},{g},{b})", "fill-opacity": a / 255.0}
+
+
+def _render_png(
+    png_path: Path,
+    img_size: tuple[int, int],
+    cx: int,
+    cy: int,
+    draw_center: bool,
+    draw_outer: bool,
+    draw_cross: bool,
+    center_diameter_px: int,
+    outer_diameter_px: int,
+    cross_width_px: int,
+    center_color: tuple[int, int, int, int],
+    outer_color: tuple[int, int, int, int],
+    cross_color: tuple[int, int, int, int],
+    background_diameter_px: int | None,
+    background_color: tuple[int, int, int, int] | None,
+) -> Image.Image:
+    """Render fixation target as PNG using PIL."""
+    img = Image.new("RGBA", img_size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    # Background circle
+    if background_diameter_px is not None and background_color is not None:
+        background_radius = background_diameter_px // 2
+        draw.ellipse(
+            [cx - background_radius, cy - background_radius, cx + background_radius, cy + background_radius],
+            fill=background_color,
+        )
+
+    # Outer circle (B component)
+    if draw_outer:
+        outer_radius = outer_diameter_px // 2
+        draw.ellipse(
+            [cx - outer_radius, cy - outer_radius, cx + outer_radius, cy + outer_radius],
+            fill=outer_color,
+        )
+
+    # Cross (C component)
+    if draw_cross:
+        outer_radius = outer_diameter_px // 2
+
+        # Create circular mask for outer circle boundary
+        circle_mask = Image.new("L", img_size, 0)
+        circle_draw = ImageDraw.Draw(circle_mask)
+        circle_draw.ellipse(
+            [cx - outer_radius, cy - outer_radius, cx + outer_radius, cy + outer_radius],
+            fill=255,
+        )
+
+        # Create cross mask
+        cross_mask = Image.new("L", img_size, 0)
+        cross_draw = ImageDraw.Draw(cross_mask)
+        cross_length = outer_radius
+        cross_draw.line([cx - cross_length, cy, cx + cross_length, cy], fill=255, width=cross_width_px)
+        cross_draw.line([cx, cy - cross_length, cx, cy + cross_length], fill=255, width=cross_width_px)
+
+        # Clip cross to circle boundary
+        cross_mask = ImageChops.multiply(cross_mask, circle_mask)
+
+        # Composite cross onto image
+        cross_layer = Image.new("RGBA", img_size, cross_color)
+        img = Image.composite(cross_layer, img, cross_mask)
+
+    # Center dot (A component)
+    if draw_center:
+        center_radius = center_diameter_px // 2
+        draw = ImageDraw.Draw(img)
+        draw.ellipse(
+            [cx - center_radius, cy - center_radius, cx + center_radius, cy + center_radius],
+            fill=center_color,
+        )
+
+    img.save(png_path)
+    return img
+
+
+def _render_svg(
+    svg_path: Path,
+    img_size: tuple[int, int],
+    cx: int,
+    cy: int,
+    draw_center: bool,
+    draw_outer: bool,
+    draw_cross: bool,
+    center_diameter_px: int,
+    outer_diameter_px: int,
+    cross_width_px: int,
+    center_color: tuple[int, int, int, int],
+    outer_color: tuple[int, int, int, int],
+    cross_color: tuple[int, int, int, int],
+    background_diameter_px: int | None,
+    background_color: tuple[int, int, int, int] | None,
+) -> None:
+    """Render fixation target as SVG."""
+    dwg = svgwrite.Drawing(str(svg_path), size=img_size, profile="full")
+
+    # Background circle
+    if background_diameter_px is not None and background_color is not None:
+        background_radius = background_diameter_px / 2
+        dwg.add(dwg.circle(center=(cx, cy), r=background_radius, **_rgba_to_svg_attrs(background_color)))
+
+    # Outer circle (B component)
+    if draw_outer:
+        outer_radius = outer_diameter_px / 2
+        dwg.add(dwg.circle(center=(cx, cy), r=outer_radius, **_rgba_to_svg_attrs(outer_color)))
+
+    # Cross (C component)
+    if draw_cross:
+        outer_radius = outer_diameter_px / 2
+        cross_length = outer_radius
+
+        # Clip path for circular boundary
+        clip_id = "circle-clip"
+        clip = dwg.defs.add(dwg.clipPath(id=clip_id))
+        clip.add(dwg.circle(center=(cx, cy), r=outer_radius))
+
+        # Cross lines with clipping
+        cross_group = dwg.g(clip_path=f"url(#{clip_id})")
+        r, g, b, a = cross_color
+        stroke_attrs = {
+            "stroke": f"rgb({r},{g},{b})",
+            "stroke-opacity": a / 255.0,
+            "stroke-width": cross_width_px,
+            "stroke-linecap": "butt",
+        }
+        cross_group.add(
+            dwg.line(start=(cx - cross_length, cy), end=(cx + cross_length, cy), fill="none", **stroke_attrs)
+        )
+        cross_group.add(
+            dwg.line(start=(cx, cy - cross_length), end=(cx, cy + cross_length), fill="none", **stroke_attrs)
+        )
+        dwg.add(cross_group)
+
+    # Center dot (A component)
+    if draw_center:
+        center_radius = center_diameter_px / 2
+        dwg.add(dwg.circle(center=(cx, cy), r=center_radius, **_rgba_to_svg_attrs(center_color)))
+
+    dwg.save()
 
 
 def fixation_target(
@@ -152,72 +300,56 @@ def fixation_target(
             diameters.append(outer_diameter_px)  # Cross extends to outer radius
         largest_diameter = max(diameters) if diameters else outer_diameter_px
 
-    # Create image
+    # Create image size and center coordinates
     img_size = (largest_diameter + 2, largest_diameter + 2)
-    img = Image.new("RGBA", img_size, (0, 0, 0, 0))
-    print(f"Image size: {img.size[0]}x{img.size[1]} px")
-
-    draw = ImageDraw.Draw(img)
     cx, cy = img_size[0] // 2, img_size[1] // 2
+    print(f"Image size: {img_size[0]}x{img_size[1]} px")
 
-    # Draw background circle if provided
-    if background_diameter_px is not None and background_color is not None:
-        background_radius = background_diameter_px // 2
-        draw.ellipse(
-            [cx - background_radius, cy - background_radius, cx + background_radius, cy + background_radius],
-            fill=background_color,
-        )
-
-    # Draw outer circle (B component)
-    if draw_outer:
-        outer_radius = outer_diameter_px // 2
-        draw.ellipse(
-            [cx - outer_radius, cy - outer_radius, cx + outer_radius, cy + outer_radius],
-            fill=outer_color,
-        )
-
-    # Draw cross (C component)
-    if draw_cross:
-        outer_radius = outer_diameter_px // 2
-
-        # Create a circular mask for the outer circle boundary (for clipping the cross)
-        circle_mask = Image.new("L", img_size, 0)
-        circle_draw = ImageDraw.Draw(circle_mask)
-        circle_draw.ellipse(
-            [cx - outer_radius, cy - outer_radius, cx + outer_radius, cy + outer_radius],
-            fill=255,
-        )
-
-        # Create cross mask
-        cross_mask = Image.new("L", img_size, 0)
-        cross_draw = ImageDraw.Draw(cross_mask)
-        cross_length = outer_radius
-        cross_draw.line([cx - cross_length, cy, cx + cross_length, cy], fill=255, width=cross_width_px)
-        cross_draw.line([cx, cy - cross_length, cx, cy + cross_length], fill=255, width=cross_width_px)
-
-        # Clip cross to circle boundary
-        cross_mask = ImageChops.multiply(cross_mask, circle_mask)
-
-        # Composite cross onto image
-        cross_layer = Image.new("RGBA", img_size, cross_color)
-        img = Image.composite(cross_layer, img, cross_mask)
-
-    # Draw center dot (A component)
-    if draw_center:
-        center_radius = center_diameter_px // 2
-        draw = ImageDraw.Draw(img)
-        draw.ellipse(
-            [cx - center_radius, cy - center_radius, cx + center_radius, cy + center_radius],
-            fill=center_color,
-        )
-
-    # Save the image
+    # Save paths
     save_path = Path(save_path)
     save_path.mkdir(exist_ok=True)
-    save_path /= f"fixation_{target_type.lower()}.png"
+    png_path = save_path / f"fixation_{target_type.lower()}.png"
+    svg_path = save_path / f"fixation_{target_type.lower()}.svg"
 
-    img.save(save_path)
-    print(f"Saved: {save_path}")
+    # Render PNG
+    img = _render_png(
+        png_path,
+        img_size,
+        cx,
+        cy,
+        draw_center,
+        draw_outer,
+        draw_cross,
+        center_diameter_px,
+        outer_diameter_px,
+        cross_width_px,
+        center_color,
+        outer_color,
+        cross_color,
+        background_diameter_px,
+        background_color,
+    )
+    print(f"Saved PNG: {png_path}")
+
+    # Render SVG
+    _render_svg(
+        svg_path,
+        img_size,
+        cx,
+        cy,
+        draw_center,
+        draw_outer,
+        draw_cross,
+        center_diameter_px,
+        outer_diameter_px,
+        cross_width_px,
+        center_color,
+        outer_color,
+        cross_color,
+        background_diameter_px,
+        background_color,
+    )
+    print(f"Saved SVG: {svg_path}")
 
     # Display if requested
     if show:
