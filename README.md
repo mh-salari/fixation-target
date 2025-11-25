@@ -1,6 +1,6 @@
 # Visual Fixation Target
 
-A Python package to generate customizable fixation targets for eye trcking experiments.
+A Python package to generate customizable fixation targets for eye tracking experiments.
 
 ## Description
 
@@ -110,8 +110,8 @@ fixation-target \
 from pathlib import Path
 from fixation_target import fixation_target
 
-# Generate an ABC target
-fixation_target(
+# Generate an ABC target and save both PNG and SVG
+result = fixation_target(
     screen_width_mm=476.64,
     screen_height_mm=268.11,
     screen_width_px=1920,
@@ -129,6 +129,11 @@ fixation_target(
     background_color=(128, 128, 128, 255),  # gray
     show=True
 )
+
+# Access the results
+print(f"PNG saved to: {result['png_path']}")
+print(f"SVG saved to: {result['svg_path']}")
+pil_image = result['image']  # PIL Image object
 ```
 
 ## Target Types
@@ -161,17 +166,27 @@ fixation_target(
 - `background_diameter_in_degrees`: Optional background circle diameter
 - `background_color`: Optional background circle color (RGBA tuple)
 - `filename`: Base filename without extension (default: "fixation"). Target type suffix will be appended automatically
+- `save_png`: Whether to save PNG file (default: True)
+- `save_svg`: Whether to save SVG file (default: True)
 - `antialias`: Apply 2x supersampling for smoother PNG edges (default: True)
 - `show`: Whether to display the generated image (default: True)
 
+### Return Value
+The function returns a dictionary containing:
+- `png_path`: Path to the saved PNG file (None if `save_png=False`)
+- `svg_path`: Path to the saved SVG file (None if `save_svg=False`)
+- `image`: PIL Image object (always returned)
+
 ### Output Files
-The package generates **both PNG and SVG** formats:
+The package can generate **both PNG and SVG** formats (controlled by `save_png` and `save_svg` parameters):
 - **PNG**: Raster image with optional anti-aliasing (2x supersampling)
 - **SVG**: Vector graphics for infinite scalability
 
-Files are named as `{filename}_{target_type}.{png|svg}`. For example, with `filename="my_target"` and `target_type="ABC"`:
+When saving is enabled, files are named as `{filename}_{target_type}.{png|svg}`. For example, with `filename="my_target"` and `target_type="ABC"`:
 - `my_target_abc.png`
 - `my_target_abc.svg`
+
+**Note**: `save_path` must be provided when `save_png=True` or `save_svg=True`. It's optional when both are `False` (useful for getting only the PIL Image object).
 
 ## Reference
 

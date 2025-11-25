@@ -29,7 +29,7 @@ def _rgba_to_svg_attrs(color: tuple[int, int, int, int]) -> dict:
 
 
 def _render_png(
-    png_path: Path,
+    png_path: Path | None,
     img_size: tuple[int, int],
     cx: int,
     cy: int,
@@ -128,7 +128,9 @@ def _render_png(
     if antialias:
         img = img.resize(img_size, Image.Resampling.LANCZOS)
 
-    img.save(png_path)
+    # Save only if path is provided
+    if png_path is not None:
+        img.save(png_path)
     return img
 
 
@@ -203,7 +205,7 @@ def fixation_target(
     screen_width_px: int,
     screen_height_px: int,
     viewing_distance_mm: float,
-    save_path: Path | str,
+    save_path: Path | str | None = None,
     target_type: str = "ABC",
     center_diameter_in_degrees: float = 0.1,
     outer_diameter_in_degrees: float = 0.6,
@@ -214,9 +216,11 @@ def fixation_target(
     background_diameter_in_degrees: float | None = None,
     background_color: tuple[int, int, int, int] | None = None,
     filename: str = "fixation",
+    save_png: bool = True,
+    save_svg: bool = True,
     antialias: bool = True,
     show: bool = True,
-) -> None:
+) -> dict[str, Path | Image.Image | None]:
     """Generate a fixation target for vision science experiments.
 
     Supports configurations: A (center), B (outer circle), C (cross), AB, AC, BC, ABC.
@@ -227,7 +231,7 @@ def fixation_target(
         screen_width_px: Width of the screen in pixels.
         screen_height_px: Height of the screen in pixels.
         viewing_distance_mm: Distance between the viewer and the screen in millimeters.
-        save_path: Path where the generated image will be saved.
+        save_path: Path where the generated image will be saved. Optional if save_png and save_svg are False.
         target_type: Type of target ("A", "B", "C", "AB", "AC", "BC", "ABC"). Default: "ABC".
         center_diameter_in_degrees: Diameter of the center dot in degrees. Default: 0.1.
         outer_diameter_in_degrees: Diameter of the outer circle in degrees. Default: 0.6.
@@ -238,10 +242,23 @@ def fixation_target(
         background_diameter_in_degrees: Diameter of background circle in degrees (optional).
         background_color: Color of background circle in (R, G, B, A) format (optional).
         filename: Base filename (without extension). Target type will be appended. Default: "fixation".
+        save_png: Whether to save PNG file. Default: True.
+        save_svg: Whether to save SVG file. Default: True.
         antialias: Apply 2x supersampling for smoother edges in PNG. Default: True.
         show: Whether to display the image after generation. Default: True.
 
+    Returns:
+        Dictionary containing:
+            - 'png_path': Path to the saved PNG file (None if save_png=False)
+            - 'svg_path': Path to the saved SVG file (None if save_svg=False)
+            - 'image': PIL Image object
+
     """
+    # Validate save_path is provided when saving is requested
+    if (save_png or save_svg) and save_path is None:
+        msg = "save_path must be provided when save_png=True or save_svg=True"
+        raise ValueError(msg)
+
     # Validate and normalize target type
     target_type = target_type.upper()
     valid_types = {"A", "B", "C", "AB", "AC", "BC", "ABC"}
@@ -337,15 +354,20 @@ def fixation_target(
     cx, cy = img_size[0] // 2, img_size[1] // 2
     print(f"Image size: {img_size[0]}x{img_size[1]} px")
 
-    # Save paths
-    save_path = Path(save_path)
-    save_path.mkdir(exist_ok=True)
-    png_path = save_path / f"{filename}_{target_type.lower()}.png"
-    svg_path = save_path / f"{filename}_{target_type.lower()}.svg"
+    # Prepare save paths if saving is requested
+    png_path = None
+    svg_path = None
+    if save_png or save_svg:
+        save_path_obj = Path(save_path)
+        save_path_obj.mkdir(exist_ok=True)
+        if save_png:
+            png_path = save_path_obj / f"{filename}_{target_type.lower()}.png"
+        if save_svg:
+            svg_path = save_path_obj / f"{filename}_{target_type.lower()}.svg"
 
     # Render PNG
     img = _render_png(
-        png_path,
+        png_path if save_png else None,
         img_size,
         cx,
         cy,
@@ -362,28 +384,37 @@ def fixation_target(
         background_color,
         antialias,
     )
-    print(f"Saved PNG: {png_path}")
+    if save_png:
+        print(f"Saved PNG: {png_path}")
 
     # Render SVG
-    _render_svg(
-        svg_path,
-        img_size,
-        cx,
-        cy,
-        draw_center,
-        draw_outer,
-        draw_cross,
-        center_diameter_px,
-        outer_diameter_px,
-        cross_width_px,
-        center_color,
-        outer_color,
-        cross_color,
-        background_diameter_px,
-        background_color,
-    )
-    print(f"Saved SVG: {svg_path}")
+    if save_svg:
+        _render_svg(
+            svg_path,
+            img_size,
+            cx,
+            cy,
+            draw_center,
+            draw_outer,
+            draw_cross,
+            center_diameter_px,
+            outer_diameter_px,
+            cross_width_px,
+            center_color,
+            outer_color,
+            cross_color,
+            background_diameter_px,
+            background_color,
+        )
+        print(f"Saved SVG: {svg_path}")
 
     # Display if requested
     if show:
         img.show()
+
+    # Return paths and image
+    return {
+        "png_path": png_path,
+        "svg_path": svg_path,
+        "image": img,
+    }
