@@ -56,7 +56,7 @@ def _render_png(
     draw = ImageDraw.Draw(img)
 
     # Background circle
-    if background_diameter_px is not None and background_color is not None:
+    if background_diameter_px is not None and background_color is not None and background_diameter_px > 0:
         background_radius = (background_diameter_px * scale) // 2
         draw.ellipse(
             [
@@ -155,7 +155,7 @@ def _render_svg(
     dwg = svgwrite.Drawing(str(svg_path), size=img_size, profile="full")
 
     # Background circle
-    if background_diameter_px is not None and background_color is not None:
+    if background_diameter_px is not None and background_color is not None and background_diameter_px > 0:
         background_radius = background_diameter_px / 2
         dwg.add(dwg.circle(center=(cx, cy), r=background_radius, **_rgba_to_svg_attrs(background_color)))
 
@@ -212,7 +212,7 @@ def fixation_target(
     cross_width_in_degrees: float = 0.15,
     center_color: tuple[int, int, int, int] = (0, 0, 0, 255),
     outer_color: tuple[int, int, int, int] = (0, 0, 0, 255),
-    cross_color: tuple[int, int, int, int] = (255, 255, 255, 255),
+    cross_color: tuple[int, int, int, int] = (255, 255, 255, 0),
     background_diameter_in_degrees: float | None = None,
     background_color: tuple[int, int, int, int] | None = None,
     filename: str = "fixation",
@@ -331,7 +331,7 @@ def fixation_target(
         print(f"Cross width: {cross_width_px} px ({cross_width_in_degrees:.2f}°)")
 
     # Calculate background circle size if provided
-    if background_diameter_in_degrees is not None:
+    if background_diameter_in_degrees is not None and background_diameter_in_degrees > 0:
         background_diameter_px = int(
             converter.visual_angle_to_pixels(background_diameter_in_degrees, orientation="vertical")
         )
